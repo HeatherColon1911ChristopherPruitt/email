@@ -1,0 +1,879 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>临时邮箱</title>
+<style>
+	:root {
+		--bg: #f5f6f8;
+		--card: #ffffff;
+		--line: #e4e7ec;
+		--line-strong: #d0d5dd;
+		--text: #101828;
+		--muted: #667085;
+		--accent: #2563eb;
+		--accent-soft: #eff4ff;
+		--ok: #067647;
+		--ok-soft: #ecfdf3;
+		--warn: #b54708;
+		--warn-soft: #fffaeb;
+		--danger: #b42318;
+		--radius: 12px;
+		--mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+	}
+	* { box-sizing: border-box; }
+	html, body { margin: 0; padding: 0; }
+	body {
+		background: var(--bg);
+		color: var(--text);
+		font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+		-webkit-font-smoothing: antialiased;
+	}
+	button, input { font: inherit; color: inherit; }
+	button { cursor: pointer; }
+	.wrap { max-width: 1080px; margin: 0 auto; padding: 20px 16px 48px; }
+
+	header.top { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; margin-bottom: 18px; }
+	.brand { font-size: 16px; font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; }
+	.brand span { color: var(--muted); font-weight: 400; font-size: 13px; margin-left: 6px; }
+	.badge {
+		display: inline-flex; align-items: center; gap: 6px;
+		padding: 3px 9px; border-radius: 999px;
+		font-size: 12px; line-height: 18px; border: 1px solid var(--line);
+		background: var(--card); color: var(--muted);
+	}
+	.badge i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .75; }
+	.badge.ok { color: var(--ok); background: var(--ok-soft); border-color: #abefc6; }
+	.badge.warn { color: var(--warn); background: var(--warn-soft); border-color: #fedf89; }
+	.badge.err { color: var(--danger); background: #fef3f2; border-color: #fecdca; }
+	.spacer { flex: 1; }
+	.link-btn {
+		background: none; border: 0; color: var(--muted); font-size: 13px; padding: 4px 2px;
+		text-decoration: underline; text-underline-offset: 3px;
+	}
+	.link-btn:hover { color: var(--text); }
+
+	.card {
+		background: var(--card); border: 1px solid var(--line);
+		border-radius: var(--radius); box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+	}
+
+	/* 解锁 */
+	.gate { padding: 28px 24px; max-width: 460px; margin: 8vh auto 0; }
+	.gate h1 { margin: 0 0 6px; font-size: 18px; letter-spacing: -0.01em; }
+	.gate p { margin: 0 0 18px; color: var(--muted); font-size: 13px; }
+	.field { display: flex; gap: 8px; }
+	input[type="text"], input[type="password"] {
+		width: 100%; padding: 10px 12px; border: 1px solid var(--line-strong);
+		border-radius: 9px; background: #fff; outline: none;
+	}
+	input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+	.btn {
+		border: 1px solid var(--line-strong); background: #fff; border-radius: 9px;
+		padding: 9px 14px; white-space: nowrap; transition: background .12s, border-color .12s;
+	}
+	.btn:hover { background: #f9fafb; }
+	.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+	.btn.primary:hover { background: #1d4ed8; }
+	.btn.danger { color: var(--danger); border-color: #fecdca; }
+	.btn.danger:hover { background: #fef3f2; }
+	.btn.ghost { border-color: transparent; background: transparent; color: var(--muted); padding: 6px 8px; }
+	.btn.ghost:hover { background: #f2f4f7; color: var(--text); }
+	.btn:disabled { opacity: .5; cursor: not-allowed; }
+	.hint { margin-top: 12px; font-size: 12px; color: var(--muted); }
+	.hint.err { color: var(--danger); }
+
+	/* 工作区 */
+	.workspace { display: none; }
+	.workspace.on { display: block; }
+	.bar { padding: 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+	.addr { position: relative; flex: 1 1 320px; display: flex; align-items: center; }
+	.addr input { padding-right: 96px; }
+	.addr .suffix {
+		position: absolute; right: 12px; font-size: 13px; color: var(--muted);
+		font-family: var(--mono); pointer-events: none;
+	}
+	.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+	.toggle {
+		display: inline-flex; align-items: center; gap: 8px; padding: 7px 10px;
+		border: 1px solid var(--line); border-radius: 9px; background: #fff; font-size: 13px;
+		color: var(--muted); user-select: none;
+	}
+	.toggle input { accent-color: var(--accent); margin: 0; }
+	.toggle.on { color: var(--text); border-color: var(--line-strong); }
+
+	.statusline { display: flex; align-items: center; gap: 8px; padding: 0 14px 12px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+	.statusline b { color: var(--text); font-weight: 600; }
+	.retention { font-size: 12px; color: var(--muted); }
+
+	.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 16px; align-items: start; margin-top: 14px; }
+	.panel { overflow: hidden; }
+	.panel-head {
+		display: flex; align-items: center; gap: 8px; padding: 11px 14px;
+		border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted);
+	}
+	.panel-head b { color: var(--text); font-weight: 600; }
+	.list { max-height: 58vh; overflow: auto; }
+	.msg {
+		display: flex; gap: 10px; padding: 12px 14px; border-bottom: 1px solid #f2f4f7;
+		cursor: pointer; transition: background .12s;
+	}
+	.msg:last-child { border-bottom: 0; }
+	.msg:hover { background: #fafbfc; }
+	.msg.active { background: var(--accent-soft); }
+	.msg-main { min-width: 0; flex: 1; }
+	.msg-top { display: flex; gap: 8px; align-items: baseline; }
+	.msg-from { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.msg-time { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+	.msg-subject { color: var(--muted); font-size: 13px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.codebox { display: flex; align-items: center; gap: 6px; margin-top: 7px; }
+	.code {
+		font-family: var(--mono); font-size: 15px; font-weight: 600; letter-spacing: .04em;
+		background: #f2f4f7; border-radius: 6px; padding: 2px 8px;
+		flex: 0 0 auto; white-space: nowrap;
+	}
+	.code.empty {
+		font-family: inherit; font-size: 12px; font-weight: 400; color: var(--muted);
+		background: #f2f4f7; letter-spacing: 0; padding: 3px 8px;
+	}
+	.code.warn { color: var(--warn); background: var(--warn-soft); }
+	.icon-btn {
+		border: 1px solid var(--line); background: #fff; border-radius: 6px;
+		font-size: 12px; padding: 1px 7px; color: var(--muted);
+	}
+	.icon-btn:hover { color: var(--text); border-color: var(--line-strong); }
+
+	.empty { padding: 34px 18px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.7; }
+	.empty b { display: block; color: var(--text); margin-bottom: 4px; font-size: 14px; }
+
+	.detail { min-height: 320px; display: flex; flex-direction: column; }
+	.detail-head { padding: 14px; border-bottom: 1px solid var(--line); }
+	.detail-title { font-size: 15px; font-weight: 650; letter-spacing: -0.01em; margin: 0 0 8px; word-break: break-word; }
+	.meta { font-size: 12px; color: var(--muted); line-height: 1.7; }
+	.meta div { overflow-wrap: anywhere; }
+	.meta b { color: var(--text); font-weight: 500; }
+	.meta .nowrap { white-space: nowrap; }
+	.detail-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+	.frame-wrap { padding: 0; background: #fbfcfd; }
+	iframe.mail { width: 100%; height: 52vh; border: 0; display: block; background: #fff; }
+	pre.text { margin: 0; padding: 16px; white-space: pre-wrap; word-break: break-word; font: 13px/1.7 var(--mono); max-height: 52vh; overflow: auto; }
+
+	details.api { margin-top: 22px; padding: 0 14px; }
+	details.api summary {
+		cursor: pointer; padding: 12px 0; font-size: 13px; color: var(--muted);
+		list-style: none; display: flex; align-items: center; gap: 8px;
+	}
+	details.api summary::-webkit-details-marker { display: none; }
+	details.api summary::marker { content: ''; }
+	details.api summary::before {
+		content: "›"; font-size: 17px; line-height: 1; color: var(--muted);
+		transition: transform .15s; transform-origin: 50% 55%;
+	}
+	details.api[open] summary::before { transform: rotate(90deg); }
+	.endpoint { font-family: var(--mono); font-size: 12px; background: #f2f4f7; padding: 2px 6px; border-radius: 5px; }
+	.codewrap { background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 12px 14px; overflow: auto; margin: 10px 0 0; }
+	.codewrap code { font-family: var(--mono); font-size: 12px; line-height: 1.7; white-space: pre; }
+	.api-note { font-size: 12px; color: var(--muted); margin: 10px 0 0; }
+
+	.toast {
+		position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 12px);
+		background: #101828; color: #fff; font-size: 13px; padding: 9px 14px; border-radius: 9px;
+		opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; z-index: 50;
+	}
+	.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+	@media (max-width: 860px) {
+		.grid { grid-template-columns: minmax(0, 1fr); }
+		.list { max-height: none; }
+		.detail { order: -1; }
+		iframe.mail, pre.text { height: 40vh; }
+		.detail:not(.on) { display: none; }
+	}
+	@media (max-width: 560px) {
+		.wrap { padding: 14px 12px 36px; }
+		.retention { display: none; }
+		.bar { padding: 12px; }
+		.addr { flex: 1 1 100%; }
+		.actions { width: 100%; }
+		.actions .btn.primary { flex: 1; }
+		iframe.mail, pre.text { height: 46vh; }
+	}
+</style>
+</head>
+<body>
+<div class="wrap">
+	<header class="top">
+		<div class="brand">临时邮箱 <span id="domainLabel"></span></div>
+		<span class="badge" id="connBadge"><i></i><span id="connText">未连接</span></span>
+		<span class="retention" id="retentionText">邮件保留 24 小时</span>
+		<div class="spacer"></div>
+		<button class="link-btn" id="logoutBtn" hidden>退出</button>
+	</header>
+
+	<section class="card gate" id="gate">
+		<h1>输入访问密钥</h1>
+		<p>密钥只保存在当前标签页，关闭后需要重新输入。</p>
+		<form class="field" id="gateForm" autocomplete="off">
+			<input type="password" id="keyInput" placeholder="访问密钥" aria-label="访问密钥" required>
+			<button class="btn primary" type="submit" id="connectBtn">连接</button>
+		</form>
+		<div class="hint" id="gateHint">密钥由部署者设置，不在网页和示例里出现。</div>
+	</section>
+
+	<section class="workspace" id="workspace">
+		<div class="card">
+			<div class="bar">
+				<div class="addr">
+					<input type="text" id="addressInput" placeholder="输入前缀，或粘贴完整地址" spellcheck="false" autocapitalize="off" autocorrect="off">
+					<span class="suffix" id="domainSuffix">@example.com</span>
+				</div>
+				<div class="actions">
+					<button class="btn" id="randomBtn" type="button">随机</button>
+					<button class="btn" id="copyAddrBtn" type="button">复制地址</button>
+					<button class="btn primary" id="queryBtn" type="button">查询</button>
+					<button class="btn" id="waitBtn" type="button">等待新邮件</button>
+					<button class="btn" id="stopBtn" type="button" hidden>停止等待</button>
+				</div>
+				<label class="toggle" id="onlyNewToggle">
+					<input type="checkbox" id="onlyNew"> 只看新的
+				</label>
+			</div>
+			<div class="statusline">
+				<span id="statusText">输入前缀后查询，邮件到达后会自动出现在这里。</span>
+			</div>
+		</div>
+
+		<div class="grid">
+			<div class="card panel">
+				<div class="panel-head"><b>收件</b><span id="listCount"></span></div>
+				<div class="list" id="list"></div>
+			</div>
+
+			<div class="card panel detail" id="detail">
+				<div class="empty" id="detailEmpty"><b>未选择邮件</b>点击左侧任意一封查看正文。</div>
+				<div id="detailBody" hidden></div>
+			</div>
+		</div>
+
+		<details class="card api">
+			<summary>程序接入</summary>
+			<div style="padding-bottom:14px">
+				<div class="meta">
+					服务地址 <b id="apiBase"></b>　邮箱域名 <b id="apiDomain"></b><br>
+					请求头带 <span class="endpoint">Authorization: Bearer 你的密钥</span>，四个接口：<br>
+					<span class="endpoint">GET /api/status</span>
+					<span class="endpoint">GET /api/messages?address=</span>
+					<span class="endpoint">GET /api/messages/{id}</span>
+					<span class="endpoint">DELETE /api/messages/{id}</span>
+				</div>
+				<div class="codewrap"><code id="curlSample"></code></div>
+				<p class="api-note">程序取码建议：发信前记下 <span class="endpoint">Date.now()</span>，查询时带 <span class="endpoint">since</span>，只处理本次范围；成功后 <span class="endpoint">DELETE</span> 掉已用邮件。</p>
+			</div>
+		</details>
+	</section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+	'use strict';
+
+	const KEY_STORE = 'temp_inbox_key';
+	const POLL_MS = 5000;
+	const MAX_WAIT_MS = 180000;
+	const PAGE_SIZE = 50;
+
+	const el = (id) => document.getElementById(id);
+
+	const state = {
+		key: '',
+		domain: '',
+		address: '',
+		messages: [],
+		selectedId: 0,
+		detail: null,
+		pollTimer: null,
+		waitDeadline: 0,
+		waitTicker: null,
+		busy: false,
+		onlyNewSince: 0,
+		requestSeq: 0,
+		abort: null,
+		// 本机与服务器的时钟差。since 用服务器时间算，否则本机快几秒就查不到刚到的信。
+		clockOffset: 0,
+	};
+
+	function serverNow() {
+		return Date.now() + state.clockOffset;
+	}
+
+	function toast(text) {
+		const node = el('toast');
+		node.textContent = text;
+		node.classList.add('on');
+		clearTimeout(toast.timer);
+		toast.timer = setTimeout(() => node.classList.remove('on'), 1600);
+	}
+
+	async function copyText(text) {
+		try {
+			await navigator.clipboard.writeText(text);
+		} catch {
+			const area = document.createElement('textarea');
+			area.value = text;
+			area.style.position = 'fixed';
+			area.style.opacity = '0';
+			document.body.appendChild(area);
+			area.select();
+			document.execCommand('copy');
+			area.remove();
+		}
+		toast('已复制');
+	}
+
+	function setBadge(kind, text) {
+		const badge = el('connBadge');
+		badge.className = 'badge' + (kind ? ' ' + kind : '');
+		el('connText').textContent = text;
+	}
+
+	function setStatus(text, kind) {
+		const node = el('statusText');
+		node.textContent = text;
+		node.style.color = kind === 'err' ? 'var(--danger)' : kind === 'ok' ? 'var(--ok)' : '';
+	}
+
+	async function api(path, options = {}) {
+		const headers = Object.assign({}, options.headers);
+		if (state.key) headers.authorization = 'Bearer ' + state.key;
+
+		const response = await fetch(path, Object.assign({}, options, { headers }));
+		const text = await response.text();
+		let data = null;
+		try { data = text ? JSON.parse(text) : null; } catch { data = null; }
+
+		if (!response.ok) {
+			const error = new Error((data && data.error && data.error.message) || ('请求失败（HTTP ' + response.status + '）'));
+			error.code = data && data.error ? data.error.code : 'http_' + response.status;
+			error.status = response.status;
+			throw error;
+		}
+		return data;
+	}
+
+	function fullAddress(raw) {
+		const value = String(raw || '').trim().toLowerCase();
+		if (!value) return '';
+		if (value.includes('@')) return value;
+		return value + '@' + state.domain;
+	}
+
+	function refreshSuffix() {
+		const value = el('addressInput').value;
+		const suffix = el('domainSuffix');
+		suffix.hidden = value.includes('@');
+		suffix.textContent = '@' + state.domain;
+	}
+
+	function randomPrefix() {
+		const alphabet = 'abcdefghijkmnpqrstuvwxyz23456789';
+		const bytes = new Uint8Array(10);
+		crypto.getRandomValues(bytes);
+		return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
+	}
+
+	/* ---------- 连接 ---------- */
+
+	async function connect(key) {
+		state.key = key;
+		el('gateHint').className = 'hint';
+		el('gateHint').textContent = '正在连接…';
+		el('connectBtn').disabled = true;
+
+		try {
+			const status = await api('/api/status');
+			state.domain = status.domain || '';
+			state.clockOffset = (status.serverTime || Date.now()) - Date.now();
+			sessionStorage.setItem(KEY_STORE, key);
+
+			el('domainLabel').textContent = '@' + state.domain;
+			el('retentionText').textContent = '邮件保留 ' + status.retentionHours + ' 小时';
+			el('domainSuffix').textContent = '@' + state.domain;
+			el('apiBase').textContent = location.origin;
+			el('apiDomain').textContent = state.domain;
+			el('curlSample').textContent =
+				'curl -s "' + location.origin + '/api/status" \\\n' +
+				'  -H "Authorization: Bearer $INBOX_KEY"\n\n' +
+				'T=$(date +%s000)                      # 发信前记下起点\n' +
+				'curl -s "' + location.origin + '/api/messages?address=abc@' + state.domain + '&since=$T" \\\n' +
+				'  -H "Authorization: Bearer $INBOX_KEY"';
+
+			el('gate').style.display = 'none';
+			el('workspace').classList.add('on');
+			el('logoutBtn').hidden = false;
+			setBadge('ok', '已连接');
+			setStatus('输入前缀后查询，邮件到达后会自动出现在这里。');
+		} catch (error) {
+			state.key = '';
+			el('connectBtn').disabled = false;
+
+			if (error.code === 'unauthorized') {
+				el('gateHint').className = 'hint err';
+				el('gateHint').textContent = '密钥不正确，请确认后重试。';
+				setBadge('err', '密钥错误');
+			} else if (error.code === 'not_configured') {
+				el('gateHint').className = 'hint err';
+				el('gateHint').textContent = '服务端还没有设置 ACCESS_KEY，请部署者先完成配置。';
+				setBadge('err', '未配置');
+			} else {
+				el('gateHint').className = 'hint err';
+				el('gateHint').textContent = '无法连接服务：' + error.message;
+				setBadge('err', '连接失败');
+			}
+		}
+	}
+
+	function logout() {
+		stopWaiting();
+		sessionStorage.removeItem(KEY_STORE);
+		state.key = '';
+		state.messages = [];
+		state.selectedId = 0;
+		el('list').innerHTML = '';
+		el('workspace').classList.remove('on');
+		el('gate').style.display = '';
+		el('logoutBtn').hidden = true;
+		el('keyInput').value = '';
+		el('connectBtn').disabled = false;
+		el('gateHint').className = 'hint';
+		el('gateHint').textContent = '密钥由部署者设置，不在网页和示例里出现。';
+		setBadge('', '未连接');
+	}
+
+	/* ---------- 列表 ---------- */
+
+	function renderList() {
+		const list = el('list');
+		el('listCount').textContent = state.messages.length ? state.messages.length + ' 封' : '';
+
+		if (!state.messages.length) {
+			list.innerHTML =
+				'<div class="empty"><b>还没有邮件</b>' +
+				'把地址填到目标网站后，点“等待新邮件”或“查询”。<br>' +
+				'收信不依赖这个页面，关掉网页也能收到。</div>';
+			return;
+		}
+
+		list.innerHTML = '';
+		for (const message of state.messages) {
+			const item = document.createElement('div');
+			item.className = 'msg' + (message.id === state.selectedId ? ' active' : '');
+			item.dataset.id = String(message.id);
+
+			const main = document.createElement('div');
+			main.className = 'msg-main';
+
+			const top = document.createElement('div');
+			top.className = 'msg-top';
+			const from = document.createElement('span');
+			from.className = 'msg-from';
+			from.textContent = message.fromName || message.from || '（未知发件人）';
+			const time = document.createElement('span');
+			time.className = 'msg-time';
+			time.textContent = formatTime(message.receivedAt);
+			top.append(from, time);
+
+			const subject = document.createElement('div');
+			subject.className = 'msg-subject';
+			subject.textContent = message.status === 'too_large'
+				? '邮件过大，未保存正文'
+				: (message.subject || '（无主题）');
+
+			const codebox = document.createElement('div');
+			codebox.className = 'codebox';
+
+			if (message.status === 'too_large') {
+				const tag = document.createElement('span');
+				tag.className = 'code empty warn';
+				tag.textContent = '超出大小限制，未保存正文';
+				codebox.append(tag);
+			} else if (message.code) {
+				const code = document.createElement('span');
+				code.className = 'code';
+				code.textContent = message.code;
+				const copy = document.createElement('button');
+				copy.className = 'icon-btn';
+				copy.type = 'button';
+				copy.textContent = '复制';
+				copy.addEventListener('click', (event) => {
+					event.stopPropagation();
+					copyText(message.code);
+				});
+				codebox.append(code, copy);
+			} else {
+				const tag = document.createElement('span');
+				tag.className = 'code empty';
+				tag.textContent = '未提取到验证码';
+				codebox.append(tag);
+			}
+
+			main.append(top, subject, codebox);
+			item.append(main);
+			item.addEventListener('click', () => openMessage(message.id));
+			list.append(item);
+		}
+	}
+
+	function formatTime(timestamp) {
+		const date = new Date(timestamp);
+		const now = new Date();
+		const sameDay = date.toDateString() === now.toDateString();
+		const pad = (n) => String(n).padStart(2, '0');
+		const clock = pad(date.getHours()) + ':' + pad(date.getMinutes());
+		if (sameDay) return clock;
+		return pad(date.getMonth() + 1) + '-' + pad(date.getDate()) + ' ' + clock;
+	}
+
+	async function loadMessages({ silent = false, since = 0 } = {}) {
+		const address = fullAddress(el('addressInput').value);
+		if (!address) {
+			setStatus('先输入邮箱前缀。', 'err');
+			return;
+		}
+		if (!address.includes('@') || address.split('@')[1] !== state.domain) {
+			setStatus('地址必须使用本服务域名 @' + state.domain + '。', 'err');
+			return;
+		}
+
+		const seq = ++state.requestSeq;
+		state.address = address;
+
+		if (state.abort) state.abort.abort();
+		state.abort = new AbortController();
+
+		if (!silent) setStatus('正在查询…');
+
+		try {
+			const params = new URLSearchParams({ address, limit: String(PAGE_SIZE) });
+			if (since) params.set('since', String(since));
+
+			const data = await api('/api/messages?' + params.toString(), { signal: state.abort.signal });
+			if (seq !== state.requestSeq) return; // 地址已切换或已发新请求，丢弃旧结果
+
+			state.messages = data.messages || [];
+			renderList();
+
+			const withCode = state.messages.filter((m) => m.code).length;
+			const waiting = Boolean(state.pollTimer);
+
+			if (!state.messages.length) {
+				setStatus(since ? '等待中：目前没有新邮件。' : '这个地址还没有邮件。');
+				setBadge(waiting ? 'warn' : 'ok', waiting ? '等待新邮件' : '已连接');
+			} else if (waiting && withCode === 0) {
+				// 收到了信但没提取到码：必须和"没有邮件"区分开，否则使用者会以为没收到。
+				setStatus('已收到 ' + state.messages.length + ' 封邮件，但没有提取到验证码，打开原文看看是否有链接或图片码。', 'warn');
+				setBadge('warn', '已收到，无验证码');
+			} else if (waiting) {
+				setStatus('等待中：已收到 ' + state.messages.length + ' 封，' + withCode + ' 封带验证码。', 'warn');
+				setBadge('warn', '等待新邮件');
+			} else {
+				setStatus(
+					'共 ' + state.messages.length + ' 封，' + withCode + ' 封提取到验证码。最新：' +
+					formatTime(state.messages[0].receivedAt),
+					'ok',
+				);
+				setBadge('ok', '已连接');
+			}
+
+			if (state.selectedId && !state.messages.some((m) => m.id === state.selectedId)) {
+				closeDetail();
+			}
+		} catch (error) {
+			if (error.name === 'AbortError') return;
+			if (seq !== state.requestSeq) return;
+
+			if (error.code === 'unauthorized') {
+				setBadge('err', '密钥错误');
+				setStatus('访问密钥已失效，请重新连接。', 'err');
+				stopWaiting();
+				return;
+			}
+
+			stopWaiting();
+			setBadge('err', '连接中断');
+			setStatus('查询失败：' + error.message + '　列表中的结果可能已不是最新。', 'err');
+		}
+	}
+
+	/* ---------- 详情 ---------- */
+
+	function closeDetail() {
+		state.selectedId = 0;
+		state.detail = null;
+		el('detailBody').hidden = true;
+		el('detailEmpty').hidden = false;
+		el('detail').classList.remove('on');
+		renderList();
+	}
+
+	async function openMessage(id) {
+		state.selectedId = id;
+		renderList();
+		el('detailEmpty').hidden = true;
+		el('detailBody').hidden = false;
+		el('detail').classList.add('on');
+		el('detailBody').innerHTML = '<div class="empty">正在载入…</div>';
+
+		// 手机上详情在列表上方，选中后直接滚过去，省一次手动翻页。
+		if (window.matchMedia('(max-width: 860px)').matches) {
+			el('detail').scrollIntoView({ block: 'start', behavior: 'smooth' });
+		}
+
+		try {
+			const data = await api('/api/messages/' + id);
+			if (state.selectedId !== id) return;
+			state.detail = data;
+			renderDetail(data);
+		} catch (error) {
+			el('detailBody').innerHTML = '<div class="empty">' + escapeHtml(error.message) + '</div>';
+		}
+	}
+
+	function renderDetail(data) {
+		const wrap = document.createElement('div');
+		const head = document.createElement('div');
+		head.className = 'detail-head';
+
+		const title = document.createElement('h2');
+		title.className = 'detail-title';
+		title.textContent = data.status === 'too_large' ? '邮件过大，未保存正文' : (data.subject || '（无主题）');
+
+		const meta = document.createElement('div');
+		meta.className = 'meta';
+		meta.innerHTML =
+			'<div>发件人：<b>' + escapeHtml(data.fromName ? data.fromName + ' <' + data.from + '>' : data.from || '未知') + '</b></div>' +
+			'<div>收件人：<b>' + escapeHtml(data.address) + '</b></div>' +
+			'<div>收到：<b class="nowrap">' + new Date(data.receivedAt).toLocaleString('zh-CN') + '</b>' +
+			'　保留至：<b class="nowrap">' + new Date(data.expiresAt).toLocaleString('zh-CN') + '</b></div>';
+
+		const actions = document.createElement('div');
+		actions.className = 'detail-actions';
+
+		if (data.code) {
+			const copyCode = document.createElement('button');
+			copyCode.className = 'btn';
+			copyCode.textContent = '复制验证码 ' + data.code;
+			copyCode.addEventListener('click', () => copyText(data.code));
+			actions.append(copyCode);
+		}
+
+		if (data.html) {
+			const toggle = document.createElement('button');
+			toggle.className = 'btn';
+			let showText = false;
+			toggle.textContent = '纯文本';
+			toggle.addEventListener('click', () => {
+				showText = !showText;
+				toggle.textContent = showText ? '网页格式' : '纯文本';
+				renderBody(showText);
+			});
+			actions.append(toggle);
+		}
+
+		const remove = document.createElement('button');
+		remove.className = 'btn danger';
+		remove.textContent = '删除这封';
+		remove.addEventListener('click', async () => {
+			if (!confirm('删除后无法恢复，确定删除这封邮件？')) return;
+			remove.disabled = true;
+			try {
+				await api('/api/messages/' + data.id, { method: 'DELETE' });
+				state.messages = state.messages.filter((m) => m.id !== data.id);
+				closeDetail();
+				renderList();
+				toast('已删除');
+			} catch (error) {
+				remove.disabled = false;
+				toast('删除失败：' + error.message);
+			}
+		});
+		actions.append(remove);
+
+		head.append(title, meta, actions);
+
+		const frameWrap = document.createElement('div');
+		frameWrap.className = 'frame-wrap';
+
+		const renderBody = (asText) => {
+			frameWrap.innerHTML = '';
+			if (asText) {
+				const pre = document.createElement('pre');
+				pre.className = 'text';
+				pre.textContent = data.text || '（没有正文）';
+				frameWrap.append(pre);
+				return;
+			}
+			if (!data.html) {
+				const pre = document.createElement('pre');
+				pre.className = 'text';
+				pre.textContent = data.text || '（没有正文）';
+				frameWrap.append(pre);
+				return;
+			}
+			const frame = document.createElement('iframe');
+			frame.className = 'mail';
+			frame.setAttribute('sandbox', '');
+			frame.setAttribute('referrerpolicy', 'no-referrer');
+			frame.srcdoc = data.html;
+			frameWrap.append(frame);
+		};
+
+		renderBody(false);
+		wrap.append(head, frameWrap);
+
+		el('detailBody').innerHTML = '';
+		el('detailBody').append(wrap);
+	}
+
+	function escapeHtml(value) {
+		return String(value == null ? '' : value).replace(/[&<>"']/g, (char) => ({
+			'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+		}[char]));
+	}
+
+	/* ---------- 等待 ---------- */
+
+	function startWaiting() {
+		if (!fullAddress(el('addressInput').value)) {
+			setStatus('先输入邮箱前缀。', 'err');
+			return;
+		}
+
+		stopWaiting(true);
+		state.waitDeadline = Date.now() + MAX_WAIT_MS;
+		el('waitBtn').hidden = true;
+		el('stopBtn').hidden = false;
+		setStatus('等待中：每 5 秒查一次，最多 3 分钟。');
+		setBadge('warn', '等待新邮件');
+
+		state.pollTimer = setInterval(() => {
+			if (Date.now() >= state.waitDeadline) {
+				stopWaiting();
+				setStatus('等待结束。邮件仍会继续接收，可点“查询”或再次等待。', 'warn');
+				return;
+			}
+			const remain = Math.round((state.waitDeadline - Date.now()) / 1000);
+			// 已有结果时不覆盖状态行，让"已收到但无验证码"这类结论留得住。
+			if (!state.messages.length) {
+				setStatus('等待中：每 5 秒查一次，剩余 ' + remain + ' 秒。', 'warn');
+			}
+			loadMessages({ silent: true, since: state.onlyNewSince || 0 });
+		}, POLL_MS);
+
+		loadMessages({ since: state.onlyNewSince || 0 });
+
+		state.waitTicker = setInterval(() => {
+			if (Date.now() >= state.waitDeadline) stopWaiting();
+		}, 1000);
+	}
+
+	function stopWaiting(keepStatus) {
+		clearInterval(state.pollTimer);
+		clearInterval(state.waitTicker);
+		state.pollTimer = null;
+		state.waitTicker = null;
+		state.waitDeadline = 0;
+		el('waitBtn').hidden = false;
+		el('stopBtn').hidden = true;
+		if (!keepStatus) {
+			setBadge('ok', '已连接');
+			if (state.messages.length) {
+				setStatus('已停止等待。已收到 ' + state.messages.length + ' 封。');
+			} else {
+				setStatus('已停止等待。');
+			}
+		}
+	}
+
+	/* ---------- 事件 ---------- */
+
+	el('gateForm').addEventListener('submit', (event) => {
+		event.preventDefault();
+		const key = el('keyInput').value.trim();
+		if (!key) return;
+		connect(key);
+	});
+
+	el('logoutBtn').addEventListener('click', logout);
+
+	el('addressInput').addEventListener('input', () => {
+		refreshSuffix();
+		stopWaiting();
+		state.messages = [];
+		state.selectedId = 0;
+		closeDetail();
+		renderList();
+		setStatus('地址已改变，点“查询”查看这个地址的邮件。');
+	});
+
+	el('randomBtn').addEventListener('click', () => {
+		el('addressInput').value = randomPrefix();
+		refreshSuffix();
+		stopWaiting();
+		state.messages = [];
+		state.selectedId = 0;
+		closeDetail();
+		renderList();
+		setStatus('已生成随机地址，复制后填到目标网站。');
+		el('addressInput').focus();
+	});
+
+	el('copyAddrBtn').addEventListener('click', () => {
+		const address = fullAddress(el('addressInput').value);
+		if (!address) {
+			setStatus('先输入邮箱前缀。', 'err');
+			return;
+		}
+		copyText(address);
+	});
+
+	el('queryBtn').addEventListener('click', () => {
+		if (state.onlyNewSince) state.onlyNewSince = serverNow();
+		stopWaiting(true);
+		setBadge('ok', '已连接');
+		loadMessages({ since: state.onlyNewSince });
+	});
+
+	el('waitBtn').addEventListener('click', startWaiting);
+	el('stopBtn').addEventListener('click', () => stopWaiting());
+
+	el('onlyNew').addEventListener('change', (event) => {
+		el('onlyNewToggle').classList.toggle('on', event.target.checked);
+		state.onlyNewSince = event.target.checked ? serverNow() : 0;
+		if (state.messages.length || el('addressInput').value) {
+			loadMessages({ since: state.onlyNewSince });
+		}
+	});
+
+	// 离开页面暂停自动等待，回来不自动恢复，避免后台持续消耗额度。
+	document.addEventListener('visibilitychange', () => {
+		if (document.hidden && state.pollTimer) {
+			stopWaiting();
+			setStatus('页面切到后台，已暂停等待。回来后可重新点“等待新邮件”。', 'warn');
+		}
+	});
+
+	/* ---------- 启动 ---------- */
+
+	const saved = sessionStorage.getItem(KEY_STORE);
+	if (saved) {
+		el('keyInput').value = saved;
+		connect(saved);
+	}
+})();
+</script>
+</body>
+</html>

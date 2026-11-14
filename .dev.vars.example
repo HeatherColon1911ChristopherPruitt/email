@@ -1,0 +1,4 @@
+# 本地开发用，复制成 .dev.vars 后改成自己的值。不要提交真实密钥。
+ACCESS_KEY=dev-key-please-change
+MAIL_DOMAIN=example.com
+RETENTION_HOURS=24

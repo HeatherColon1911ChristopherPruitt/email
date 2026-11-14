@@ -1,0 +1,36 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "temp-inbox"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+keep_vars = true
+
+# 免费套餐每次请求只有 10ms CPU，关闭多余的观测开销，保留日志便于排障。
+[observability]
+enabled = true
+
+# 唯一需要的存储：D1。建库后把 database_id 换成自己的真实 ID。
+# 本地 `wrangler dev` 不需要真实 ID，会自动使用本地 SQLite。
+[[d1_databases]]
+binding = "db"
+database_name = "temp-inbox"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+# 网页是纯静态文件，没有构建步骤，直接由 Workers 静态资源托管。
+[assets]
+binding = "ASSETS"
+directory = "./public"
+not_found_handling = "single-page-application"
+run_worker_first = true
+
+# 每小时清理过期邮件。免费套餐每个账号最多 5 个 Cron 触发器。
+[triggers]
+crons = ["7 * * * *"]
+
+[vars]
+# 收信域名。只填域名本身，不带 @ 和前缀。多域名用英文逗号分隔。
+MAIL_DOMAIN = "example.com"
+# 邮件保留小时数，固定 24。
+RETENTION_HOURS = "24"
+
+# 访问密钥不放这里。用 `wrangler secret put ACCESS_KEY` 或在控制台
+# Settings → Variables and Secrets 里添加类型为 Secret 的 ACCESS_KEY。
