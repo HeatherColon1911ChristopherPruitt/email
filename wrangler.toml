@@ -13,7 +13,7 @@ enabled = true
 [[d1_databases]]
 binding = "db"
 database_name = "temp-inbox"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "4fd4beed-8402-4e29-87c9-d790dc628dec"
 
 # 网页是纯静态文件，没有构建步骤，直接由 Workers 静态资源托管。
 [assets]
@@ -28,7 +28,7 @@ crons = ["7 * * * *"]
 
 [vars]
 # 收信域名。只填域名本身，不带 @ 和前缀。多域名用英文逗号分隔。
-MAIL_DOMAIN = "example.com"
+MAIL_DOMAIN = "cwcw.cc.cd"
 # 邮件保留小时数，固定 24。
 RETENTION_HOURS = "24"
 
